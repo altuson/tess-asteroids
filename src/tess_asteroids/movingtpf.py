@@ -1,6 +1,7 @@
 import time
 from typing import Optional, Tuple, Union
 
+import lkprf
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -179,6 +180,12 @@ class MovingTPF:
         self.time = self.cube.time[nan_mask][
             bound_mask
         ]  # FFI timestamps of each frame in the data cube.
+        self.tstart = self.cube.tstart[nan_mask][
+            bound_mask
+        ]  # Time at start of the exposure.
+        self.tstop = self.cube.tstop[nan_mask][
+            bound_mask
+        ]  # Time at end of the exposure.
         self.quality = self.cube.quality[nan_mask][
             bound_mask
         ]  # SPOC quality flag of each frame in the data cube.
@@ -390,13 +397,12 @@ class MovingTPF:
         # Get mask via chosen method
         if method == "threshold":
             self.aperture_mask = self._create_threshold_mask(**kwargs)
-        # will add these methods in a future PR
+        elif method == "prf":
+            self.aperture_mask = self._create_prf_mask(**kwargs)
         elif method == "ellipse":
             self.aperture_mask = self._create_ellipse_aperture(
                 return_params=False, **kwargs
             )
-        elif method in ["prf"]:
-            raise NotImplementedError(f"Method '{method}' not implemented yet.")
         else:
             raise ValueError(
                 f"Method must be one of: ['threshold', 'prf', 'ellipse']. Not '{method}'"
@@ -486,6 +492,144 @@ class MovingTPF:
             aperture_mask[nt] = labels == closest_label
 
         return aperture_mask
+
+    def _create_prf_mask(self, threshold: Union[str, float] = 0.01, **kwargs):
+        """
+        Creates an aperture mask from the PRF model.
+
+        Parameters
+        ----------
+        threshold : float or 'optimal'
+            If float, must be in the range [0,1). Only pixels where the prf model >= `threshold`
+            will be included in the aperture.
+            If 'optimal', computes optimal value for threshold.
+
+        Returns
+        -------
+        aperture_mask : ndarray
+            Boolean numpy array, where pixels inside the aperture are 'True'.
+            Shape is (ntimes, nrows, ncols).
+        """
+
+        # Create PRF model
+        if not hasattr(self, "prf_model"):
+            self._create_prf_model(**kwargs)
+
+        # Use PRF model to define aperture
+        if threshold == "optimal":
+            raise NotImplementedError(
+                "Computation of optimal PRF aperture not implemented yet."
+            )
+        elif isinstance(threshold, float) and threshold < 1 and threshold >= 0:
+            aperture_mask = self.prf_model >= threshold  # type: ignore
+        else:
+            raise ValueError(
+                f"Threshold must be either 'optimal' or a float between 0 and 1. Not '{threshold}'"
+            )
+
+        return aperture_mask
+
+    def _create_prf_model(self, time_step: float = 1.0):
+        """
+        Creates a PRF model of the target as a function of time. Since the object is moving,
+        the PRF model is made by summing models on a high resolution time grid. It creates
+        the `self.prf_model` attribute. The PRF model has shape (ntimes, nrows, ncols),
+        each value represents the fraction of the total flux in that pixel at that time and
+        at each time all values sum to one.
+
+        Parameters
+        ----------
+        time_step : float
+            Resolution of time grid used to build PRF model, in minutes.
+
+        Returns
+        -------
+        """
+
+        if not hasattr(self, "all_flux"):
+            raise AttributeError("Must run `get_data()` before creating PRF model.")
+
+        # Initialise PRF - don't specify sector => uses post-sector4 models in all cases.
+        prf = lkprf.TESSPRF(camera=self.camera, ccd=self.ccd)  # , sector=self.sector)
+
+        # Use interpolation to get target row,column for high-resolution time grid
+        high_res_time = np.linspace(
+            self.tstart[0],
+            self.tstop[-1],
+            int(np.ceil((self.tstop[-1] - self.tstart[0]) * 24 * 60 / time_step)),
+        )
+        column_interp = np.interp(
+            high_res_time,
+            self.ephem["time"].astype(float),
+            self.ephem["column"].astype(float),
+            left=np.nan,
+            right=np.nan,
+        )
+        row_interp = np.interp(
+            high_res_time,
+            self.ephem["time"].astype(float),
+            self.ephem["row"].astype(float),
+            left=np.nan,
+            right=np.nan,
+        )
+
+        # Build PRF model at each timestamp
+        prf_model = []
+        for t in range(len(self.time)):
+            # Find indices in `high_res_time` between corresponding tstart/tstop.
+            inds = np.where(
+                np.logical_and(
+                    high_res_time >= self.tstart[t], high_res_time <= self.tstop[t]
+                )
+            )[0]
+
+            # Get PRF model throughout exposure, sum and normalise.
+            # If `row_interp` or `col_interp` contain nans (i.e. outside range of interpolation),
+            # then prf.evaluate breaks. In that case, manually define model with nans.
+            try:
+                model = prf.evaluate(
+                    targets=[
+                        (r, c) for r, c in zip(row_interp[inds], column_interp[inds])
+                    ],
+                    origin=(self.corner[t][0], self.corner[t][1]),
+                    shape=self.shape,
+                )
+                model = sum(model) / np.sum(model)
+            except Exception:
+                model = np.full(self.shape, np.nan)
+
+            prf_model.append(model)
+
+        # If first/last frame contains nans, replace PRF model with following/preceding frame.
+        if np.isnan(prf_model).any():
+            nan_ind = np.unique(np.where(np.isnan(prf_model))[0])
+
+            for i in nan_ind:
+                # First frame, use following PRF model.
+                if i == 0:
+                    prf_model[i] = prf_model[i + 1]
+                    logger.warning(
+                        "The PRF model contained nans in the first frame (cadence number {0}). The model was replaced with that from the following frame (cadence number {1}).".format(
+                            self.cadence_number[i], self.cadence_number[i + 1]
+                        )
+                    )
+                # Last frame, use preceding PRF model.
+                elif i == len(prf_model) - 1:
+                    prf_model[i] = prf_model[i - 1]
+                    logger.warning(
+                        "The PRF model contained nans in the last frame (cadence number {0}). The model was replaced with that from the preceding frame (cadence number {1}).".format(
+                            self.cadence_number[i], self.cadence_number[i - 1]
+                        )
+                    )
+                # Warn user if other nans exist because this is unexpected.
+                else:
+                    logger.warning(
+                        "The PRF model contains unexpected nans in cadence number {0}. This should be investigated.".format(
+                            self.cadence_number[i]
+                        )
+                    )
+
+        self.prf_model = np.asarray(prf_model)
 
     def _create_ellipse_aperture(
         self,
