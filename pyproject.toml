@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tess-asteroids"
-version = "0.6.0"
+version = "0.7.0"
 description = "Create TPFs and LCs for solar system asteroids observed by NASA's TESS mission."
 license = "MIT"
 authors = ["Amy Tuson <amy.l.tuson@nasa.gov>",

@@ -279,3 +279,43 @@ def test_make_tpf():
 
     # Delete the file
     os.remove("tests/tess-1998YT6-s0006-1-1-shape11x11-moving_tp.fits")
+
+
+def test_to_lightcurve():
+    """
+    Test the to_lightcurve() function with the method `aperture`.  This internally calls
+    _aperture_photometry() and _create_lc_quality(). The tests check the expected length
+    of the lightcurve, the expected value of the centroid and the expected values of the
+    quality mask.
+    """
+
+    # Make TPF for asteroid 1998 YT6.
+    target, _ = MovingTPF.from_name("1998 YT6", sector=6)
+    target.get_data()
+    target.reshape_data()
+    target.create_pixel_quality()
+    target.background_correction()
+
+    # Use aperture photometry to extract lightcurve from TPF.
+    target.create_aperture()
+    target.to_lightcurve(method="aperture")
+
+    # Check the lightcurve has the same length as target.time
+    assert len(target.lc["aperture"]["time"]) == len(target.time)
+    assert len(target.lc["aperture"]["flux"]) == len(target.time)
+    assert len(target.lc["aperture"]["quality"]) == len(target.time)
+
+    # Check the average centroid is within 1/2 a pixel of the center of the TPF.
+    assert (
+        (np.nanmean(target.lc["aperture"]["row_cen"] - target.corner[:, 0]) > 4.5)
+        & (np.nanmean(target.lc["aperture"]["row_cen"] - target.corner[:, 0]) < 5.5)
+    ).all()
+    assert (
+        (np.nanmean(target.lc["aperture"]["col_cen"] - target.corner[:, 1]) > 4.5)
+        & (np.nanmean(target.lc["aperture"]["col_cen"] - target.corner[:, 1]) < 5.5)
+    ).all()
+
+    # Check the pixel quality has been correctly accounted for in quality mask.
+    for t in range(len(target.time)):
+        if target.pixel_quality[t][target.aperture_mask[t]].any() != 0:
+            assert target.lc["aperture"]["quality"][t] > 0

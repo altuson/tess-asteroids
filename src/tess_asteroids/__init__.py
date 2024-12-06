@@ -13,5 +13,5 @@ straps = pd.read_csv(f"{loc}/data/straps.csv", comment="#")
 
 from .movingtpf import MovingTPF  # noqa: E402
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 __all__ = ["MovingTPF"]
