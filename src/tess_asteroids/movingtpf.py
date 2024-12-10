@@ -17,7 +17,7 @@ from tesscube.fits import get_wcs_header_by_extension
 from tesscube.utils import _sync_call, convert_coordinates_to_runs
 
 from . import logger, straps
-from .utils import compute_moments, inside_ellipse
+from .utils import animate_cube, compute_moments, inside_ellipse
 
 
 class MovingTPF:
@@ -1495,17 +1495,66 @@ class MovingTPF:
         """
         raise NotImplementedError("_save_table() is not yet implemented.")
 
-    def animate_tpf(self):
+    def animate_tpf(
+        self,
+        show_aperture: bool = True,
+        show_ephemeris: bool = True,
+        file_name: Optional[str] = None,
+        **kwargs,
+    ):
         """
-        Plot animation of TPF data.
+        Plot animation of TPF data with optional information overlay.
 
-        Parameters
+        Parameters:
         ----------
+        show_aperture : bool
+            If True, the aperture used for photometry is displayed in the animation. Default is True.
 
-        Returns
-        -------
+        show_ephemeris : bool
+            If True, the predicted position of the target is included in the animation. Default is True.
+
+        file_name : str or None
+            If provided, the animation will be saved to the specified file. The format of the file has to be GIF.
+            If None, the animation will not be saved. Default is None.
+
+        kwargs:
+            Keyword arguments passed to `utils.animate_cube` such as [`interval`, `repeat_delay`, `cnorm`].
+
+        Returns:
+        --------
         """
-        raise NotImplementedError("animate_tpf() is not yet implemented.")
+
+        if (
+            not hasattr(self, "all_flux")
+            or not hasattr(self, "flux")
+            or not hasattr(self, "corr_flux")
+            or not hasattr(self, "aperture_mask")
+        ):
+            raise AttributeError(
+                "Must run `get_data()`, `reshape_data()`, `background_correction()` and `create_aperture()` before animating."
+            )
+        ani = animate_cube(
+            self.corr_flux,
+            aperture_mask=self.aperture_mask if show_aperture else None,
+            corner=self.corner,
+            ephemeris=self.ephemeris if show_ephemeris else None,
+            cadenceno=self.cadence_number,
+            time=self.time,
+            suptitle=f"Asteroid {self.target} in Sector {self.sector} Camera {self.camera} CCD {self.ccd}",
+            **kwargs,
+        )
+        if file_name is not None and isinstance(file_name, str):
+            ani.save(file_name, writer="pillow")
+        try:
+            from IPython.display import HTML
+
+            return HTML(ani.to_jshtml())
+        except ModuleNotFoundError:
+            # To make installing the package easier, ipython is not a dependency,
+            # because we can assume it is installed when notebook-specific features are called
+            logger.error(
+                "ipython needs to be installed for animate() to work (e.g., `pip install ipython`)"
+            )
 
     @staticmethod
     def from_name(
