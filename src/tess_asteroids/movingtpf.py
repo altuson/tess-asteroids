@@ -21,6 +21,7 @@ from tesscube import TESSCube
 from tesscube.fits import get_wcs_header_by_extension
 from tesscube.query import async_get_primary_hdu
 from tesscube.utils import _sync_call, convert_coordinates_to_runs
+from tqdm import tqdm
 
 from . import __version__, logger, straps
 from .utils import animate_cube, compute_moments, inside_ellipse, make_wcs_header
@@ -100,7 +101,7 @@ class MovingTPF:
     def make_tpf(
         self,
         shape: Tuple[int, int] = (11, 11),
-        bg_method: str = "rolling",
+        bg_method: str = "linear_model",
         ap_method: str = "prf",
         save: bool = False,
         outdir: str = "",
@@ -117,7 +118,7 @@ class MovingTPF:
             Defines the pixels that will be retrieved, centred on the target, at each timestamp.
         bg_method : str
             Method used for background correction.
-            One of `rolling`.
+            One of [`rolling`, `linear_model`].
         ap_method : str
             Method used to create aperture.
             One of ['threshold', 'prf', 'ellipse'].
@@ -138,8 +139,8 @@ class MovingTPF:
         # >>>>> ADD REFINE_COORDINATES() WHEN IMPLEMENTED <<<<<
         self.get_data(shape=shape)
         self.reshape_data()
-        self.create_pixel_quality(**kwargs)
         self.background_correction(method=bg_method, **kwargs)
+        self.create_pixel_quality(**kwargs)
         self.create_aperture(method=ap_method, **kwargs)
         self.to_fits(
             file_type="tpf", save=save, outdir=outdir, file_name=file_name, **kwargs
@@ -292,24 +293,6 @@ class MovingTPF:
             logger.warning(
                 "Some of the requested pixels are outside of the FFI bounds (1<=row<=2078, 1<=col<=2136) and will not be returned."
             )
-        # Warn user if there are pixels outside of FFI science array.
-        if (
-            sum(
-                ~np.logical_and(
-                    [r.all() for r in row[:, :, 0] <= 2048],
-                    [
-                        c.all()
-                        for c in np.logical_and(
-                            column[:, 0, :] >= 45, column[:, 0, :] <= 2092
-                        )
-                    ],
-                )
-            )
-            > 0
-        ):
-            logger.warning(
-                "Some of the requested pixels are outside of the FFI science array (1<=row<=2048, 45<=col<=2092), but they will be included in your TPF."
-            )
 
         # Convert pixels to byte runs
         runs = convert_coordinates_to_runs(pixel_coordinates)
@@ -349,6 +332,19 @@ class MovingTPF:
                 for j in i
             ]
         )
+
+        # Set non-science pixels to nan values.
+        non_science_pixel_mask = ~np.logical_and(
+            self.pixels[:, 0] <= 2048,
+            np.logical_and(self.pixels[:, 1] >= 45, self.pixels[:, 1] <= 2092),
+        )
+        self.all_flux[:, non_science_pixel_mask] = np.nan
+        self.all_flux_err[:, non_science_pixel_mask] = np.nan
+        # Warn user if there are pixels outside of FFI science array.
+        if sum(non_science_pixel_mask) > 0:
+            logger.warning(
+                "Some of the requested pixels are outside of the FFI science array (1<=row<=2048, 45<=col<=2092), but they will be included in your TPF."
+            )
 
         # Pixel mask that tracks moving target
         target_mask = []
@@ -438,16 +434,16 @@ class MovingTPF:
         self.flux = np.asarray(self.flux)
         self.flux_err = np.asarray(self.flux_err)
 
-    def background_correction(self, method: str = "rolling", **kwargs):
+    def background_correction(self, method: str = "linear_model", **kwargs):
         """
         Apply background correction to reshaped flux data.
 
         Parameters
         ----------
         method : str
-            Method used for background correction. One of `rolling`.
+            Method used for background correction. One of [`rolling`,`linear_model`].
         **kwargs
-            Keyword arguments to be passed to `_bg_rolling_median()`.
+            Keyword arguments to be passed to `_bg_rolling_median()` and `_bg_linear_model()`.
 
         Returns
         -------
@@ -457,13 +453,23 @@ class MovingTPF:
                 "Must run `get_data()` and `reshape_data()` before computing background."
             )
 
+        # Initialise masks that will flag NaNs in SL or BG linear model, only if `linear_model` is
+        # the most recent method run.
+        self.sl_nan_mask = np.zeros_like(self.time, dtype=bool)
+        self.lm_nan_mask = np.zeros_like(self.all_flux, dtype=bool)
+
         # Get background via chosen method
         if method == "rolling":
             self.bg, self.bg_err = self._bg_rolling_median(**kwargs)
 
+        elif method == "linear_model":
+            self.bg, self.bg_err, _, _, _, _ = self._bg_linear_model(**kwargs)
+
         else:
             raise ValueError(
-                "`method` must be one of: `rolling`. Not `{0}`".format(method)
+                "`method` must be one of: [`rolling`,`linear_model`]. Not `{0}`".format(
+                    method
+                )
             )
 
         # Apply background correction
@@ -517,28 +523,31 @@ class MovingTPF:
 
         return np.asarray(bg), np.asarray(bg_err)
 
-    def _create_pca_source_mask(
+    def _create_source_mask(
         self,
         target_threshold: float = 0.01,
+        include_stars: bool = True,
         star_flux_threshold: float = 1.1,
         star_gradient_threshold: float = 5,
         **kwargs,
     ):
         """
         Creates a boolean mask, with the same shape as `self.all_flux` (ntimes, npixels), that masks stationary sources
-        (e.g. stars) and the moving target. This is applied when modelling the background scattered light using PCA.
+        (e.g. stars) and the moving target.
 
         The moving target mask is created using the PRF model and selecting all pixels that contain more than the
         `target_threshold` fraction of the object's flux. This mask is defined per time.
 
         The star mask is created using two condiditons: i) a high flux value and ii) a high flux gradient. This mask is
-        constant across all times.
+        constant across all times. This is only included in the mask if `include_stars` is `True`.
 
         Parameters
         ----------
         target_threshold : float
             Pixels where the PRF model is greater than this threshold are included in the target mask. Must be between 0 and 1
             because the PRF model is normalised so that all values sum to one.
+        include_stars : bool
+            If `True`, returns a mask for moving target and stars. If `False`, returns a mask for moving target only.
         star_flux_threshold : float
             Used to define the threshold above which a pixel has a high flux.
         star_gradient_threshold : float
@@ -570,6 +579,8 @@ class MovingTPF:
         target_mask = (
             self._create_target_prf_model(all_flux=True, **kwargs) >= target_threshold
         )
+        if not include_stars:
+            return target_mask
 
         # Create mask for stationary sources e.g. stars (high flux values AND high flux gradients).
 
@@ -622,6 +633,7 @@ class MovingTPF:
         poly_deg: int = 3,
         window_length: float = 1,
         diagnostic_plot: bool = False,
+        progress_bar: bool = True,
         **kwargs,
     ):
         """
@@ -655,6 +667,8 @@ class MovingTPF:
             It is defined in days.
         diagnostic_plot : bool
             If True, shows two diagnostic plots to check the scattered light model.
+        progress_bar : bool
+            If True and method is `per_time`, this displays a progress bar for model computation.
         kwargs : dict
             Keywords arguments passed to `self._create_pca_source_mask`, e.g `target_threshold`, `star_flux_threshold`.
 
@@ -664,17 +678,21 @@ class MovingTPF:
             Scattered light model, with same shape as `self.all_flux`.
         sl_model_err : ndarray
             Error on scattered light model, with same shape as `self.all_flux`.
-        sl_quality : ndarray
-            Quality of scattered light model, with same shape as `self.time`. At cadences where no SL model is available,
-            quality mask is set to True.
         """
 
-        # Create mask for moving target and stars.
-        source_mask = self._create_pca_source_mask(**kwargs)
+        # Parameter logic checks
+        if window_length <= 0:
+            raise ValueError(
+                f"`window_length` must be greater than zero. Not '{window_length}'"
+            )
+        if poly_deg <= 0:
+            raise ValueError(f"`poly_deg` must be greater than zero. Not '{poly_deg}'")
 
-        # Initialise scattered light quality mask
-        # >>> Once SL model is included in BG modelling, update where quality mask is created/saved. <<<
-        sl_quality = np.zeros_like(self.time, dtype=bool)
+        # Create mask for moving target and stars.
+        source_mask = self._create_source_mask(include_stars=True, **kwargs)
+
+        # Add nan flux values to the mask (PCA cannot have nan in flux array)
+        source_mask |= np.isnan(self.all_flux)
 
         # Create design matrix - a `poly_deg` degree polynomial in row and column.
         row, col = self.pixels.T
@@ -714,7 +732,11 @@ class MovingTPF:
             except np.linalg.LinAlgError:
                 sl_model = np.full(self.all_flux.shape, np.nan)
                 sl_model_err = np.full(self.all_flux.shape, np.nan)
-                sl_quality = np.ones_like(self.time, dtype=bool)
+
+                # Update SL NaN mask
+                if hasattr(self, "sl_nan_mask"):
+                    self.sl_nan_mask = np.ones_like(self.time, dtype=bool)
+
                 logger.warning(
                     "When computing the scattered light model, no solution was found. The scattered light model was set to nan at all times."
                 )
@@ -737,7 +759,7 @@ class MovingTPF:
             sl_model_err = np.zeros(self.all_flux.shape)
 
             # Run through each time
-            for t in range(len(self.time)):
+            for t in tqdm(range(len(self.time)), disable=not progress_bar):
                 # Indices that define a time window around the current frame.
                 tmin, tmax = (
                     self.time[t] - 0.5 * window_length,
@@ -769,7 +791,11 @@ class MovingTPF:
                 except AssertionError:
                     sl_model[t] = np.nan
                     sl_model_err[t] = np.nan
-                    sl_quality[t] = True
+
+                    # Update SL NaN mask
+                    if hasattr(self, "sl_nan_mask"):
+                        self.sl_nan_mask[t] = True
+
                     logger.warning(
                         "At cadence number {0}, the PCA failed with an AssertionError. This means either niter < 0, ncomponents <= 0 or ncomponents is greater than the smallest dimension of the input matrix (i.e. masking of `self.all_flux` has removed too much data). The corresponding scattered light model was set to nan.".format(
                             self.cadence_number[t]
@@ -785,7 +811,11 @@ class MovingTPF:
                 except np.linalg.LinAlgError:
                     sl_model[t] = np.nan
                     sl_model_err[t] = np.nan
-                    sl_quality[t] = True
+
+                    # Update SL NaN mask
+                    if hasattr(self, "sl_nan_mask"):
+                        self.sl_nan_mask[t] = True
+
                     logger.warning(
                         "When computing the scattered light model for cadence number {0}, no solution was found. The corresponding scattered light model was set to nan.".format(
                             self.cadence_number[t]
@@ -873,7 +903,222 @@ class MovingTPF:
             plt.show()
             plt.close(fig)
 
-        return np.asarray(sl_model), np.asarray(sl_model_err), np.asarray(sl_quality)
+        return np.asarray(sl_model), np.asarray(sl_model_err)
+
+    def _bg_linear_model(
+        self,
+        sl_method: str = "all_time",
+        sl_poly_deg: int = 3,
+        sl_window_length: float = 1,
+        window_length: float = 1,
+        poly_deg: int = 3,
+        sigma: float = 5,
+        progress_bar: bool = True,
+        **kwargs,
+    ):
+        """
+
+        Parameters
+        ----------
+
+        sigma : float
+            Use np.inf to not use outlier clipping.
+
+
+        Returns
+        -------
+        bg : ndarray
+            Background flux estimate.
+            Array with same shape as self.flux.
+        bg_err : ndarray
+            Error on background flux estimate.
+            Array with same shape as self.flux.
+        sl_model : ndarray
+        sl_model_err : ndarray
+        linear_model : ndarray
+        linear_model_err : ndarray
+        """
+
+        if not hasattr(self, "all_flux"):
+            raise AttributeError("Must run `get_data()` before computing background.")
+
+        # Parameter logic checks
+        if window_length <= 0:
+            raise ValueError(
+                f"`window_length` must be greater than zero. Not '{window_length}'"
+            )
+        if poly_deg <= 0:
+            raise ValueError(f"`poly_deg` must be greater than zero. Not '{poly_deg}'")
+        if sigma <= 0:
+            raise ValueError(f"`sigma` must be greater than zero. Not '{sigma}'")
+
+        # Remove scattered light from flux
+        sl_model, sl_model_err = self._create_scattered_light_model(
+            method=sl_method,
+            poly_deg=sl_poly_deg,
+            window_length=sl_window_length,
+            progress_bar=progress_bar,
+            **kwargs,
+        )
+        sl_corr_flux = self.all_flux - sl_model
+        sl_corr_flux_err = np.sqrt(
+            np.nansum([self.all_flux_err**2, sl_model_err**2], axis=0)
+        )
+
+        # Initialise arrays
+        linear_model = np.zeros(self.all_flux.shape)
+        linear_model_err = np.zeros(self.all_flux.shape)
+
+        # Define good quality data using SPOC quality flags.
+        spoc_quality_mask = self.quality & (1 | 4 | 16 | 32 | 16384) == 0
+
+        # Create mask for moving target.
+        source_mask = self._create_source_mask(include_stars=False, **kwargs)
+
+        # Scale time between (-0.5, 0.5) for linear modelling.
+        scaled_time = (self.time - np.nanmedian(self.time)) / np.ptp(self.time)
+
+        logger.info("Started computation of background linear model.")
+        start_time = time.time()
+        for t in tqdm(range(len(self.time)), disable=not progress_bar):
+            # Calculate indices that define a time window around the current frame.
+            tmin, tmax = (
+                self.time[t] - 0.5 * window_length,
+                self.time[t] + 0.5 * window_length,
+            )
+            t_window = np.where(np.logical_and(self.time >= tmin, self.time <= tmax))[0]
+            adx, bdx = min(t_window), max(t_window) + 1
+
+            # Create design matrix - a `poly_deg` degree polynomial in time.
+            X = np.vstack([(scaled_time[adx:bdx]) ** idx for idx in range(poly_deg)]).T
+
+            # Initialise priors on LM components (broad normal distributions).
+            prior_mu = np.zeros(X.shape[1])
+            prior_sigma = np.ones(X.shape[1]) * 1e4
+
+            # Initialise BG linear model distribution.
+            linear_model_dist = np.zeros((self.all_flux.shape[1], 100))
+
+            # Loop through each relevant pixel for fitting i.e. pixels inside movingTPF region.
+            for pdx in np.where(self.target_mask[t])[0]:
+                # Mask times with bad SPOC quality or where the moving target is present in the pixel.
+                k = np.logical_and(
+                    ~source_mask[adx:bdx][:, pdx], spoc_quality_mask[adx:bdx]
+                )
+
+                # Prime while loop
+                n_clip = np.inf
+
+                while n_clip != 0:
+                    # If there are no times with which to fit, return nan.
+                    if not k.any():
+                        linear_model_dist[pdx] = np.nan
+                        break
+
+                    # Update priors: first component should be close to the median of the pixel flux value, but it can't be negative.
+                    # If it is negative, leave prior unchanged.
+                    prior_mu[0] = np.nanmedian(sl_corr_flux[adx:bdx][k, pdx])
+                    if prior_mu[0] <= 0:
+                        prior_mu[0] = 0
+                    else:
+                        prior_sigma[0] = prior_mu[0] ** 0.5
+
+                    # Use weighted Bayesian LS.
+                    sigma_w_inv = X[k].T.dot(
+                        X[k] / sl_corr_flux_err[adx:bdx][k, pdx, None] ** 2
+                    ) + np.diag(1 / prior_sigma**2)
+                    B = (
+                        X[k].T.dot(
+                            sl_corr_flux[adx:bdx][k, pdx]
+                            / sl_corr_flux_err[adx:bdx][k, pdx] ** 2
+                        )
+                        + prior_mu / prior_sigma**2
+                    )
+
+                    # Find the best-fitting weights and errors and turn it into a distribution
+                    w = np.linalg.solve(sigma_w_inv, B)
+                    werr = np.linalg.inv(sigma_w_inv)
+                    try:
+                        wdist = np.random.multivariate_normal(
+                            w, werr, size=linear_model_dist.shape[1]
+                        )
+                    except np.linalg.LinAlgError:
+                        linear_model_dist[pdx] = np.nan
+                        break
+
+                    linear_model_dist[pdx] = X[np.arange(adx, bdx) == t].dot(wdist.T)[0]
+
+                    # Mask significant outliers.
+                    n_clip_prev = np.sum(~k)
+                    k = np.logical_and(
+                        k,
+                        np.abs(sl_corr_flux[adx:bdx][:, pdx] - X.dot(w))
+                        / (sl_corr_flux_err[adx:bdx][:, pdx])
+                        < sigma,
+                    )
+                    n_clip = np.sum(~k) - n_clip_prev
+
+            # Compute BG linear model and error from distribution.
+            linear_model[t], linear_model_err[t] = (
+                np.nanmean(linear_model_dist, axis=1),
+                np.nanstd(linear_model_dist, ddof=1, axis=1)
+                / np.sqrt(linear_model_dist.shape[1]),
+            )
+
+            # If there is no `linear_model`, replace with median and MAD and flag as bad quality.
+            for pix in np.where(np.isnan(linear_model[t]))[0]:
+                linear_model[t, pix] = np.nanmedian(sl_corr_flux[adx:bdx][:, pix])
+                linear_model_err[t, pix] = stats.median_abs_deviation(
+                    sl_corr_flux[adx:bdx][:, pix]
+                )
+                # Update LM NaN mask
+                if hasattr(self, "lm_nan_mask"):
+                    self.lm_nan_mask[t, pix] = True
+        logger.info(
+            "Finished computation of background linear model in {0:.2f} sec.".format(
+                time.time() - start_time
+            )
+        )
+
+        # Reshape arrays to match `self.flux`
+        sl_model_reshaped = []
+        sl_model_err_reshaped = []
+        linear_model_reshaped = []
+        linear_model_err_reshaped = []
+        for t in range(len(self.time)):
+            sl_model_reshaped.append(
+                sl_model[t][self.target_mask[t]].reshape(self.shape)
+            )
+            sl_model_err_reshaped.append(
+                sl_model_err[t][self.target_mask[t]].reshape(self.shape)
+            )
+            linear_model_reshaped.append(
+                linear_model[t][self.target_mask[t]].reshape(self.shape)
+            )
+            linear_model_err_reshaped.append(
+                linear_model_err[t][self.target_mask[t]].reshape(self.shape)
+            )
+
+        # Combine LM and SL model to create global BG model
+        bg = np.asarray(sl_model_reshaped) + np.asarray(linear_model_reshaped)
+        bg_err = np.sqrt(
+            np.nansum(
+                [
+                    np.asarray(linear_model_err_reshaped) ** 2,
+                    np.asarray(sl_model_err_reshaped) ** 2,
+                ],
+                axis=0,
+            )
+        )
+
+        return (
+            bg,
+            bg_err,
+            np.asarray(sl_model_reshaped),
+            np.asarray(sl_model_err_reshaped),
+            np.asarray(linear_model_reshaped),
+            np.asarray(linear_model_err_reshaped),
+        )
 
     def create_aperture(self, method: str = "prf", **kwargs):
         """
@@ -1400,6 +1645,8 @@ class MovingTPF:
         2 - pixel is in a strap column
         3 - pixel is saturated
         4 - pixel is within `sat_buffer_rad` pixels of a saturated pixel
+        5 - pixel has no scattered light correction. Only relevant if `linear_model` background correction was used.
+        6 - pixel had no background linear model, value was infilled. Only relevant if `linear_model` background correction was used.
 
         Parameters
         ----------
@@ -1411,9 +1658,13 @@ class MovingTPF:
         Returns
         -------
         """
-        if not hasattr(self, "pixels") or not hasattr(self, "flux"):
+        if (
+            not hasattr(self, "pixels")
+            or not hasattr(self, "flux")
+            or not hasattr(self, "corr_flux")
+        ):
             raise AttributeError(
-                "Must run `get_data()` and `reshape_data()` before creating pixel quality mask."
+                "Must run `get_data()`, `reshape_data()` and `background_correction()` before creating pixel quality mask."
             )
 
         # Pixel mask that identifies non-science pixels
@@ -1457,6 +1708,20 @@ class MovingTPF:
                         sat_mask[t], iterations=sat_buffer_rad
                     )
                     & ~sat_mask[t],
+                },
+                # Pixel was not corrected for scattered light. This either applies to no pixels or all pixels
+                # at a given time. It is only meaningful if the `linear_model` background correction was used.
+                "sl_nan_mask": {
+                    "bit": 5,
+                    "value": np.full(self.shape, self.sl_nan_mask[t]),
+                },
+                # Pixel did not have a background linear model, so value was replaced with median flux in
+                # time window. It is only meaningful if the `linear_model` background correction was used.
+                "lm_nan_mask": {
+                    "bit": 6,
+                    "value": self.lm_nan_mask[t][self.target_mask[t]].reshape(
+                        self.shape
+                    ),
                 },
             }
             # Compute bit-wise mask
@@ -1550,12 +1815,12 @@ class MovingTPF:
         if (
             not hasattr(self, "all_flux")
             or not hasattr(self, "flux")
-            or not hasattr(self, "pixel_quality")
             or not hasattr(self, "corr_flux")
+            or not hasattr(self, "pixel_quality")
             or not hasattr(self, "aperture_mask")
         ):
             raise AttributeError(
-                "Must run `get_data()`, `reshape_data()`, `create_pixel_quality()`, `background_correction()` and `create_aperture()` before doing aperture photometry."
+                "Must run `get_data()`, `reshape_data()`, `background_correction()`, `create_pixel_quality()` and `create_aperture()` before doing aperture photometry."
             )
 
         # Compute `value` to mask bad bits.
@@ -1646,7 +1911,12 @@ class MovingTPF:
         4 - at least one saturated pixel inside aperture.
         5 - at least one pixel inside aperture is 4-adjacent to a saturated pixel.
         6 - all pixels inside aperture are `bad_bits`.
-        7 - PRF model contained nans. Only relevant if `prf` aperture was used.
+        7 - PRF model contained nans.
+            Only relevant if `prf` aperture was used.
+        8 - at least one pixel inside aperture does not have scattered light correction.
+            Only relevant if `linear_model` background correction was used.
+        9 - at least one pixel inside aperture had no background linear model, value was infilled.
+            Only relevant if `linear_model` background correction was used.
 
         Parameters
         ----------
@@ -1662,11 +1932,11 @@ class MovingTPF:
         if (
             not hasattr(self, "all_flux")
             or not hasattr(self, "flux")
-            or not hasattr(self, "pixel_quality")
             or not hasattr(self, "corr_flux")
+            or not hasattr(self, "pixel_quality")
         ):
             raise AttributeError(
-                "Must run `get_data()`, `reshape_data()`, `create_pixel_quality()` and `background_correction()` before creating lightcurve quality."
+                "Must run `get_data()`, `reshape_data()`, `background_correction()` and `create_pixel_quality()` before creating lightcurve quality."
             )
 
         if method == "aperture":
@@ -1732,6 +2002,24 @@ class MovingTPF:
                 # PRF model contained nans and was replaced with preceding/following frame.
                 # This will only be meaningful if the `prf` aperture was used.
                 "prf_nan_mask": {"bit": 7, "value": self.prf_nan_mask},
+                # Pixel in aperture with no scattered light correction
+                # Only relevant if `linear_model` background correction was used.
+                "sl_nan_mask": {
+                    "bit": 8,
+                    "value": [
+                        (self.pixel_quality[t][self.aperture_mask[t]] & 16 != 0).any()
+                        for t in range(len(self.time))
+                    ],
+                },
+                # Pixel in aperture with no background linear model, value was infilled.
+                # Only relevant if `linear_model` background correction was used.
+                "lm_nan_mask": {
+                    "bit": 9,
+                    "value": [
+                        (self.pixel_quality[t][self.aperture_mask[t]] & 32 != 0).any()
+                        for t in range(len(self.time))
+                    ],
+                },
                 # Add flag for negative pixels in aperture?
             }
 
@@ -1967,7 +2255,7 @@ class MovingTPF:
             or not hasattr(self, "pixel_quality")
         ):
             raise AttributeError(
-                "Must run `get_data()`, `reshape_data()`, `create_pixel_quality()`, `background_correction()` and `create_aperture()` before saving TPF."
+                "Must run `get_data()`, `reshape_data()`, `background_correction()`, `create_pixel_quality()` and `create_aperture()` before saving TPF."
             )
 
         # Compute WCS header

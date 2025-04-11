@@ -20,6 +20,7 @@ lkprf = "^1.1.1"
 matplotlib = "^3.9"
 lkspacecraft = "^1.0.5"
 fbpca = "^1.0"
+tqdm = "^4.67.1"
 
 [tool.poetry.group.dev]
 optional = true
