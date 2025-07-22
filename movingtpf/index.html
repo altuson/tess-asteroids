@@ -707,7 +707,7 @@
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">MovingTPF</span><span class="p">(</span>
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">target</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">ephem</span><span class="p">:</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">time_scale</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s2">&quot;tdb&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">barycentric</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">metadata</span><span class="p">:</span> <span class="n"><span title="dict">dict</span></span> <span class="o">=</span> <span class="p">{},</span>
 </span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
 </span></code></pre></div>
@@ -738,7 +738,7 @@ save the lightcurve as a FITS file.</p>
           <div class="doc-md-description">
             <p>Target ephemeris with columns ['time', 'sector', 'camera', 'ccd', 'column', 'row']. Optional columns: ['vmag', 'hmag'].</p>
 <ul>
-<li>'time' : float in format (JD - 2457000). See also <code>time_scale</code> below.</li>
+<li>'time' : float in format (JD - 2457000) in TDB. See also <code>barycentric</code> below.</li>
 <li>'sector', 'camera', 'ccd' : int</li>
 <li>'column', 'row' : float. These must be one-indexed, where the lower left pixel of the FFI is (1,1).</li>
 <li>'vmag' : float, optional. Visual magnitude.</li>
@@ -747,18 +747,16 @@ save the lightcurve as a FITS file.</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
-            <b><code>time_scale</code></b>
-              (<code><span title="str">str</span></code>, default:
-                  <code>&#39;tdb&#39;</code>
+            <b><code>barycentric</code></b>
+              (<code><span title="bool">bool</span></code>, default:
+                  <code>True</code>
 )
           –
           <div class="doc-md-description">
-            <p>Time scale of input <code>ephem['time']</code>. One of ['tdb', 'utc']. Default is 'tdb'.</p>
-<ul>
-<li>If 'tdb', the input <code>ephem['time']</code> must be in TDB measured at the solar system barycenter from the TESS FFI header.
-    This is the scale used for the 'TSTART'/'TSTOP' keywords in SPOC FFI headers and the 'TIME' column in SPOC
-    TPFs and LCFs.</li>
-<li>If 'utc', the input <code>ephem['time']</code> must be in UTC measured at the spacecraft. This can be recovered from the SPOC data
+            <ul>
+<li>If True, the input <code>ephem['time']</code> must be in TDB measured at the solar system barycenter. This is the case for the
+    'TSTART'/'TSTOP' keywords in SPOC FFI headers and the 'TIME' column in SPOC TPFs and LCFs.</li>
+<li>If False, the input <code>ephem['time']</code> must be in TDB measured at the spacecraft. This can be recovered from the SPOC data
     products: for FFIs subtract header keyword 'BARYCORR' from 'TSTART'/'TSTOP' and for TPFs/LCFs subtract the
     'TIMECORR' column from the 'TIME' column.</li>
 </ul>
@@ -888,7 +886,7 @@ If <code>None</code>, full ephemeris will be used to initialise MovingTPF.</p>
             <p>Initialised MovingTPF with ephemeris and orbital elements from JPL/Horizons.
 Target ephemeris has columns ['time', 'sector', 'camera', 'ccd', 'column', 'row', 'vmag', 'hmag'].</p>
 <ul>
-<li>'time' : float with units (JD - 2457000) in UTC at spacecraft.</li>
+<li>'time' : float with units (JD - 2457000) in TDB at spacecraft.</li>
 <li>'sector', 'camera', 'ccd' : int</li>
 <li>'column', 'row' : float. These are one-indexed, where the lower left pixel of the FFI is (1,1).</li>
 <li>'vmag' : float. Visual magnitude.</li>

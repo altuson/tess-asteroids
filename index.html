@@ -449,13 +449,13 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#time-scales" class="md-nav__link">
+  <a href="#time" class="md-nav__link">
     <span class="md-ellipsis">
-      Time scales
+      Time
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Time scales">
+    <nav class="md-nav" aria-label="Time">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -776,14 +776,14 @@
 </span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>        <span class="p">})</span>
 </span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
 </span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="c1"># Initialise MovingTPF</span>
-</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="n">target</span> <span class="o">=</span> <span class="n">MovingTPF</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="n">ephem</span><span class="p">,</span> <span class="n">time_scale</span> <span class="o">=</span> <span class="s2">&quot;tdb&quot;</span><span class="p">)</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="n">target</span> <span class="o">=</span> <span class="n">MovingTPF</span><span class="p">(</span><span class="s2">&quot;example&quot;</span><span class="p">,</span> <span class="n">ephem</span><span class="p">,</span> <span class="n">barycentric</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>
 </span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="c1"># Make TPF, but do not save to file</span>
 </span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="n">target</span><span class="o">.</span><span class="n">make_tpf</span><span class="p">()</span>
 </span></code></pre></div>
 <p>A few things to note about the format of the ephemeris:</p>
 <ul>
-<li><code>time</code> must have units JD - 2457000. See explanation of <code>time_scale</code> <a href="https://github.com/altuson/tess-asteroids?tab=readme-ov-file#time-scales">below</a>.</li>
+<li><code>time</code> must have format (JD - 2457000) in the TDB scale. See explanation of the <code>barycentric</code> parameter <a href="https://github.com/altuson/tess-asteroids?tab=readme-ov-file#time">below</a>.</li>
 <li><code>sector</code>, <code>camera</code>, <code>ccd</code> must each have one unique value.</li>
 <li><code>column</code>, <code>row</code> must be one-indexed, where the lower left pixel of the FFI has value (1,1).</li>
 </ul>
@@ -834,16 +834,16 @@
 </span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="c1"># Plot LC</span>
 </span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">lc</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </span></code></pre></div>
-<h2 id="time-scales">Time scales</h2>
-<p>When you initialise <code>MovingTPF()</code>, the <code>time_scale</code> parameter defines the scale of the <code>time</code> column in the input ephemeris. It can have one of two values:</p>
+<h2 id="time">Time</h2>
+<p>When you initialise <code>MovingTPF()</code>, the parameter <code>barycentric</code> is defined as follows:</p>
 <ul>
-<li><code>tdb</code> (default): this means the input ephemeris <code>time</code> is in TDB measured at the solar system barycenter. This is the scale used for the TSTART/TSTOP keywords in SPOC FFI headers and the TIME column in SPOC TPFs and LCFs. It is the standard time scale for TESS data products.</li>
-<li><code>utc</code>: this means the input ephemeris <code>time</code> is in UTC measured at the spacecraft. This can be recovered from the SPOC data products: for FFIs subtract header keyword BARYCORR from TSTART/TSTOP and for TPFs/LCFs subtract the TIMECORR column from the TIME column.</li>
+<li><code>True</code> (default): this means the input <code>time</code> must be in TDB measured <strong>at the solar system barycenter</strong>. This is the case for the TSTART/TSTOP keywords in SPOC FFI headers and the TIME column in SPOC TPFs and LCFs.</li>
+<li><code>False</code>: this means the input <code>time</code> must be in TDB measured <strong>at the spacecraft</strong>. This can be recovered from the SPOC data products: for FFIs subtract the header keyword BARYCORR from TSTART/TSTOP and for TPFs/LCFs subtract the TIMECORR column from the TIME column.</li>
 </ul>
-<p>When <code>MovingTPF()</code> is initialised <code>from_name()</code>, the <code>time_scale</code> is handled internally. As a user, you will only need to consider the <code>time_scale</code> if you are inputting a custom ephemeris. </p>
+<p>When <code>MovingTPF()</code> is initialised <code>from_name()</code>, the <code>barycentric</code> parameter is handled internally. As a user, you will only need to consider the <code>barycentric</code> parameter if you are inputting a custom ephemeris. </p>
 <p>For more information about time scales, see the <code>astropy</code> <a href="https://docs.astropy.org/en/stable/time/index.html#time-scale">documentation</a>.</p>
 <h3 id="barycentric-time-correction">Barycentric time correction</h3>
-<p>The barycentric time correction derived by SPOC (BARYCORR) is used to transform the time in UTC at the spacecraft into the time in TDB at the solar system barycenter. This correction is calculated at the center of each FFI (i.e. one correction for each CCD) but, in reality, the correction depends upon RA and Dec. Therefore, within <code>tess-asteroids</code> we use <code>lkspacecraft</code> to re-derive the barycentric time correction based upon the position of the moving target. In the output TPFs and LCFs, you will see columns called ORIGINAL_TIME (FFI timestamp in TDB at barycenter, as derived by SPOC), ORIGINAL_TIMECORR (correction to transform UTC at spacecraft into TDB at barycenter, as derived by SPOC), TIME (re-derived time in TDB at barycenter) and TIMECORR (re-derived time correction).</p>
+<p>The barycentric time correction derived by SPOC (BARYCORR) is used to transform the time at the spacecraft into the time at the solar system barycenter. This correction is calculated at the center of each FFI (i.e. one correction for each CCD) but, in reality, the correction depends upon RA and Dec. Therefore, within <code>tess-asteroids</code> we use <code>lkspacecraft</code> to re-derive the barycentric time correction based upon the position of the moving target. In the output TPFs and LCFs, you will see columns called ORIGINAL_TIME (FFI timestamp in TDB at barycenter, as derived by SPOC), ORIGINAL_TIMECORR (correction to transform time at spacecraft into time at barycenter, as derived by SPOC), TIME (re-derived time in TDB at barycenter) and TIMECORR (re-derived time correction).</p>
 <h2 id="understanding-the-tpf-and-lcf">Understanding the TPF and LCF</h2>
 <p>The TPF has four HDUs: </p>
 <ul>
