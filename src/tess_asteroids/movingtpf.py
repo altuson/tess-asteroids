@@ -2119,7 +2119,8 @@ class MovingTPF:
         method : str
             Method to extract lightcurve. One of `aperture` or `psf`.
         kwargs : dict
-            Keyword arguments, e.g `self._aperture_photometry` takes `bad_bits`.
+            Keyword arguments, e.g `self._aperture_photometry` takes `bad_bits`,
+            `self._psf_photometry` takes `time_binning`
 
         Returns
         -------
@@ -2161,7 +2162,19 @@ class MovingTPF:
             }
 
         elif method == "psf":
-            raise NotImplementedError("PSF photometry is not yet implemented.")
+            flux, flux_err, time, chi2, fit_quality, time_binning = (
+                self._psf_photometry(**kwargs)
+            )
+            self.lc["psf"] = {
+                "time": time,
+                "flux": flux,
+                "flux_err": flux_err,
+                "fit_quality": fit_quality,
+                "chi2": chi2,
+                "time_binning": time_binning,
+                "flux_fraction": np.ones_like(flux),
+            }
+            # raise NotImplementedError("PSF photometry is not yet implemented.")
         else:
             raise ValueError(
                 f"Method must be one of: ['aperture', 'psf']. Not '{method}'"
@@ -2174,9 +2187,106 @@ class MovingTPF:
             self.lc[method]["flux"],
             self.lc[method]["flux_err"],
             self.lc[method]["flux_fraction"]
-            if self.ap_method == "prf"
+            if method == "aperture" and self.ap_method == "prf"
             else np.ones_like(self.lc[method]["flux_fraction"]),
         )
+
+    def _psf_photometry(
+        self, time_binning: int = 1, cadence_quality: bool = False, **kwargs
+    ):
+        """
+        Computes PSF phtometry by fitting the PRF model to the data. The model is fitted using a linear model as
+        in the LFD paper (Hedges et al. 2021).
+        Optionally it can fit the data in a cadence window simultaneusly, effectively binning the data to improve SNR.
+
+        Parameters
+        ----------
+        time_binning : int
+            Number of cadences used to fit the PRF model simultaneusly, effectively doing data binning.
+            Default is 1, which is no binning.
+
+        Returns:
+        --------
+        flux, flux_err, time, chi2, fit_quality: ndarrays
+            Flux, flux_err from the PRF fitting. Resulting time array which changes if `time_binnin > 1`.
+            `chi2` is the Chi-square metric for the fitted model. `fit_quality` has flags when the fit
+            routine did not converge.
+
+        """
+        if (
+            not hasattr(self, "all_flux")
+            or not hasattr(self, "flux")
+            or not hasattr(self, "corr_flux")
+            or not hasattr(self, "pixel_quality")
+            or not hasattr(self, "aperture_mask")
+        ):
+            raise AttributeError(
+                "Must run `get_data()`, `reshape_data()`, `background_correction()`, `create_pixel_quality()` and `create_aperture()` before doing aperture photometry."
+            )
+        # use only good quality data to fit the PSF
+        if cadence_quality:
+            quality_mask = self.quality == 0
+            time = self.time[quality_mask]
+            prf_model = self._create_target_prf_model(all_flux=False)[quality_mask]
+            cube = self.corr_flux[quality_mask]
+            cube_err = self.corr_flux_err[quality_mask]
+        # use all cadences, this might lead to inaccurare results
+        else:
+            time = self.time
+            prf_model = self._create_target_prf_model(all_flux=False)
+            cube = self.corr_flux
+            cube_err = self.corr_flux_err
+
+        # define the number of points in the resulting light curve given the cadence binning
+        n_points = time.shape[0] // time_binning
+        prf_phot = []
+        nfails = 0
+        # iterate over binning windows to compute psf photometry
+        for idx, t, a, ae, p in tqdm(
+            zip(
+                range(n_points),
+                np.array_split(time, n_points),
+                np.array_split(cube, n_points),
+                np.array_split(cube_err, n_points),
+                np.array_split(prf_model, n_points),
+            ),
+            total=len(range(n_points)),
+        ):
+            # find finite values
+            j = np.isfinite(a.ravel()) & np.isfinite(ae.ravel())
+            # create DM from PRF model
+            X = p.ravel()[:, None]
+            sigma_w_inv = X[j].T.dot(X[j] / ae.ravel()[j, None] ** 2)
+            # solve linear model
+            try:
+                # get PRF flux
+                amp = np.linalg.solve(
+                    sigma_w_inv, X[j].T.dot((a.ravel()[j] / ae.ravel()[j] ** 2))
+                )[0]
+                # get flux error
+                amp_err = np.linalg.inv(sigma_w_inv).diagonal() ** 0.5
+                # compute model reduced chi2
+                chi2 = np.sum(
+                    (a.ravel() - X.dot(amp).ravel()) ** 2 / (ae.ravel() ** 2), axis=0
+                ) / (a.ravel().shape[0] - 1)
+                prf_phot.append([t.mean(), amp, amp_err[0], chi2])
+            # catch lin alg when problem has no solution, fill with nan values for this time
+            except np.linalg.LinAlgError:
+                prf_phot.append([t.mean(), np.nan, np.nan, np.nan])
+                nfails += 1
+                continue
+        if nfails > 0:
+            logger.warning(
+                f"During PRF fitting, {nfails} cadences did not solve. This cadences will be replaced by `NaN`."
+            )
+
+        time, flux, flux_err, chi2 = np.array(prf_phot).T
+        # flag cadences that linear model failed
+        fit_quality = np.isnan(flux).astype(int)
+        # flag cadences with negative fluxes
+        fit_quality[flux < 0] += 2**1
+
+        return (flux, flux_err, time, chi2, fit_quality, time_binning)
 
     def _aperture_photometry(self, bad_bits: list = [1, 3, 7], **kwargs):
         """
