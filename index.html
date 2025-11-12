@@ -801,7 +801,7 @@
 </span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">target</span><span class="o">.</span><span class="n">animate_tpf</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="making-a-lc">Making a LC</h3>
-<p>You can extract a LC from the TPF, using aperture photometry, as follows:</p>
+<p>You can extract a LC from the TPF using aperture photometry and/or PSF photometry. For example:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tess_asteroids</span><span class="w"> </span><span class="kn">import</span> <span class="n">MovingTPF</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Initialise MovingTPF for asteroid 1998 YT6 in TESS sector 6</span>
@@ -852,10 +852,11 @@
 <li>"APERTURE" - an image HDU containing the average aperture across all times.</li>
 <li>"EXTRAS" - a table HDU containing columns not found in a SPOC TPF. This includes "RA_PRED"/"DEC_PRED" (expected position of target in world coordinates), "CORNER1"/"CORNER2" (original FFI column/row of the lower-left pixel in the TPF), "PIXEL_QUALITY" (3D pixel quality mask identifying e.g. strap columns, non-science pixels and saturation), "APERTURE" (aperture as a function of time) and "ORIGINAL_TIME"/"ORIGINAL_TIMECORR" (time and barycentric correction derived by SPOC).</li>
 </ul>
-<p>The LCF has two HDUs: </p>
+<p>The LCF has two or three HDUs (depending upon which lightcurves you created): </p>
 <ul>
 <li>"PRIMARY" - a primary HDU containing only a header.</li>
-<li>"LIGHTCURVE" - a table HDU with columns including "TIME" (timestamps in BTJD), "FLUX"/"FLUX_ERR" (flux and error from aperture photometry) and "TESSMAG"/"TESSMAG_ERR" (measured TESS magnitude and error).</li>
+<li>"LIGHTCURVE_AP" - a table HDU containing the aperture photomety light curve, with columns including "TIME" (timestamps in BTJD), "FLUX"/"FLUX_ERR" (flux and error from aperture photometry) and "TESSMAG"/"TESSMAG_ERR" (measured TESS magnitude and error).</li>
+<li>"LIGHTCURVE_PSF" - a table HDU containing the PSF photomety light curve, with columns including "TIME" (timestamps in BTJD), "FLUX"/"FLUX_ERR" (flux and error from PSF photometry) and "TESSMAG"/"TESSMAG_ERR" (measured TESS magnitude and error).</li>
 </ul>
 <h2 id="citation">Citation</h2>
 <p>If you make use of <code>tess-asteroids</code> in your work, please cite our software using the version-specific DOI from <a href="https://zenodo.org/records/15882329">Zenodo</a>. You can generate a BibTex citation using Zenodo.</p>

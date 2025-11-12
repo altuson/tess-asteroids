@@ -1037,7 +1037,7 @@ If no filename is given, a default one will be generated.</p>
 )
           –
           <div class="doc-md-description">
-            <p>Method to extract lightcurve. One of [<code>aperture</code>, <code>psf</code>].</p>
+            <p>Method to extract lightcurve. One of [<code>all</code>, <code>aperture</code>, <code>psf</code>].</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
@@ -1328,7 +1328,8 @@ This function creates the <code>self.lc</code> attribute, which stores the time 
 )
           –
           <div class="doc-md-description">
-            <p>Keyword arguments, e.g <code>self._aperture_photometry</code> takes <code>bad_bits</code>.</p>
+            <p>Keyword arguments, e.g <code>self._aperture_photometry</code> takes <code>bad_bits</code>,
+<code>self._psf_photometry</code> takes <code>time_bin_size</code></p>
           </div>
         </li>
     </ul>
