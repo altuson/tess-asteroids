@@ -1257,9 +1257,10 @@ the following flags (Bit - Description):</p>
 <li>3 - pixel is saturated</li>
 <li>4 - pixel is within <code>sat_buffer_rad</code> pixels of a saturated pixel</li>
 <li>5 - pixel has no scattered light correction. Only relevant if <code>linear_model</code> background correction was used.</li>
-<li>6 - pixel had no background linear model, value was infilled. Only relevant if <code>linear_model</code> background correction was used.</li>
+<li>6 - pixel had no background star model, value is nan. Only relevant if <code>linear_model</code> background correction was used.</li>
 <li>7 - pixel had negative flux value BEFORE background correction was applied.
     This can happen near bleed columns from saturated stars (e.g. see Sector 6, Camera 1, CCD 4).</li>
+<li>8 - pixel has a poor fitting background star model. Only relevant if <code>linear_model</code> background correction was used.</li>
 </ul>
 
 
