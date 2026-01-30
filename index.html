@@ -435,6 +435,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#plotting-the-lc" class="md-nav__link">
+    <span class="md-ellipsis">
+      Plotting the LC
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#compatibility-with-lightkurve" class="md-nav__link">
     <span class="md-ellipsis">
       Compatibility with lightkurve
@@ -707,8 +716,15 @@
 <p><code>tess-asteroids</code> allows you to make Target Pixel Files (TPFs) and Light Curve Files (LCFs) for any object that moves through the TESS field of view, for example solar system asteroids, comets or minor planets.</p>
 <p>See the full documentation, including tutorials, <a href="https://altuson.github.io/tess-asteroids/">here</a>. </p>
 <h2 id="installation">Installation</h2>
-<p>The easiest way to install <code>tess-asteroids</code> and all of its dependencies is to run the following command in a terminal window:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>pip<span class="w"> </span>install<span class="w"> </span>tess-asteroids
+<p>The easiest way to install <code>tess-asteroids</code> and all of its dependencies is to use <code>pip</code>. We recommend you do this installation in a new <a href="https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html">virtual environment</a> by running the following commands in a terminal window:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Create new environment called tess-asteroids with Python 3.10</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>tess-asteroids<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Activate environment</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>conda<span class="w"> </span>activate<span class="w"> </span>tess-asteroids
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="c1"># Install tess-asteroids (latest stable version)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>pip<span class="w"> </span>install<span class="w"> </span>tess-asteroids
 </span></code></pre></div>
 <h3 id="lkspacecraft-dependency"><code>lkspacecraft</code> dependency</h3>
 <p><code>tess-asteroids</code> uses <code>lkspacecraft</code> to derive barycentric time corrections (see <a href="https://github.com/altuson/tess-asteroids?tab=readme-ov-file#barycentric-time-correction">below</a>). <strong>The first time you run <code>lkspacecraft</code> it will download a set of files (the SPICE kernels for TESS). This will take approximately 5 minutes, depending on your internet connection, and the total file volume will be about 1GB.</strong> The files will be cached once they are downloaded and if a new version of any file becomes available they will be automatically retrieved.</p>
@@ -726,9 +742,9 @@
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">target</span><span class="o">.</span><span class="n">make_lc</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 <p align="center">
-  <img alt="Example TPF" src="https://github.com/altuson/tess-asteroids/blob/main/docs/tess-1980VR1-s0001-1-1-shape11x11-moving_tp.gif?raw=true" width="43%">
+  <img alt="Example TPF" src="https://github.com/altuson/tess-asteroids/blob/main/docs/tess-1980VR1-s0001-1-1-shape11x11-moving_tp.gif?raw=true" width="35%">
 &nbsp; &nbsp; &nbsp; &nbsp;
-  <img alt="Example LC" src="https://github.com/altuson/tess-asteroids/blob/main/docs/tess-1980VR1-s0001-1-1-shape11x11_lc.png?raw=true" width="52%">
+  <img alt="Example LC" src="https://github.com/altuson/tess-asteroids/blob/main/docs/tess-1980VR1-s0001-1-1-shape11x11_lc.png?raw=true" width="55%">
 </p>
 
 <h2 id="tutorial">Tutorial</h2>
@@ -800,8 +816,12 @@
 </span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a><span class="c1"># Animate TPF and save to file (tess-1998YT6-s0006-1-1-shape11x11-moving_tp.gif)</span>
 </span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a><span class="n">target</span><span class="o">.</span><span class="n">animate_tpf</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
+<p align="center">
+  <img alt="Example TPF" src="https://github.com/altuson/tess-asteroids/blob/main/docs/tess-1998YT6-s0006-1-1-shape11x11-moving_tp.gif?raw=true" width="60%">
+</p>
+
 <h3 id="making-a-lc">Making a LC</h3>
-<p>You can extract a LC from the TPF using aperture photometry and/or PSF photometry. For example:</p>
+<p>You can extract a LC from the TPF using aperture and/or PSF photometry. For example:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tess_asteroids</span><span class="w"> </span><span class="kn">import</span> <span class="n">MovingTPF</span>
 </span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>
 </span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="c1"># Initialise MovingTPF for asteroid 1998 YT6 in TESS sector 6</span>
@@ -813,26 +833,46 @@
 </span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a><span class="c1"># Make LC and save to file (tess-1998YT6-s0006-1-1-shape11x11_lc.fits)</span>
 </span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a><span class="n">target</span><span class="o">.</span><span class="n">make_lc</span><span class="p">(</span><span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
-<p>The <code>make_lc()</code> function extracts the lightcurve, creates a quality mask and optionally saves the LCF. There are a few optional parameters in the <code>make_lc()</code> function. This includes:</p>
+<p>The <code>make_lc()</code> function extracts the lightcurve, creates quality flags and optionally saves the LCF. There are a few optional parameters in the <code>make_lc()</code> function. This includes:</p>
 <ul>
-<li><code>method</code> defines the method used to perform photometry. Default: <code>aperture</code>.</li>
+<li><code>method</code> defines the method used to perform photometry. Default: <code>all</code> (creates aperture and PSF lightcurve).</li>
 <li><code>save</code> determines whether or not the LCF will be saved as a FITS file. Default: <code>False</code>.</li>
 <li><code>outdir</code> is the directory where the LCF will be saved. Note, the directory is not automatically created.</li>
 <li><code>file_name</code> is the name the LCF will be saved with. If one is not given, a default name will be generated.</li>
 </ul>
+<h3 id="plotting-the-lc">Plotting the LC</h3>
+<p><code>plot_lc()</code> is a built-in helper function to plot the lightcurve:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tess_asteroids</span><span class="w"> </span><span class="kn">import</span> <span class="n">MovingTPF</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Initialise MovingTPF for asteroid 1998 YT6 in TESS sector 6</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">target</span> <span class="o">=</span> <span class="n">MovingTPF</span><span class="o">.</span><span class="n">from_name</span><span class="p">(</span><span class="s2">&quot;1998 YT6&quot;</span><span class="p">,</span> <span class="n">sector</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="c1"># Make TPF, but do not save to file</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="n">target</span><span class="o">.</span><span class="n">make_tpf</span><span class="p">()</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="c1"># Make LC, but do not save to file</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="n">target</span><span class="o">.</span><span class="n">make_lc</span><span class="p">()</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="c1"># Plot the LC and save to file (tess-1998YT6-s0006-1-1-shape11x11_lc.png)</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="n">target</span><span class="o">.</span><span class="n">plot_lc</span><span class="p">(</span><span class="n">ylim</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span><span class="mi">80</span><span class="p">),</span> <span class="n">plot_err</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span></code></pre></div>
+<p align="center">
+  <img alt="Example LC" src="https://github.com/altuson/tess-asteroids/blob/main/docs/tess-1998YT6-s0006-1-1-shape11x11_lc.png?raw=true" width="60%">
+</p>
+
 <h3 id="compatibility-with-lightkurve">Compatibility with <code>lightkurve</code></h3>
 <p>The TPFs and LCFs that get created by <code>tess-asteroids</code> can be opened with <code>lightkurve</code>, as follows:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">lightkurve</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lk</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="c1"># Read in TPF and LCF, without removing bad cadences</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">tpf</span> <span class="o">=</span> <span class="n">lk</span><span class="o">.</span><span class="n">TessTargetPixelFile</span><span class="p">(</span><span class="s2">&quot;tess-1998YT6-s0006-1-1-shape11x11-moving_tp.fits&quot;</span><span class="p">,</span> <span class="n">quality_bitmask</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">lc</span> <span class="o">=</span> <span class="n">lk</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">tess</span><span class="o">.</span><span class="n">read_tess_lightcurve</span><span class="p">(</span><span class="s2">&quot;tess-1998YT6-s0006-1-1-shape11x11_lc.fits&quot;</span><span class="p">,</span> <span class="n">quality_bitmask</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
-</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>
-</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="c1"># Plot TPF and aperture for a single frame</span>
-</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="n">tpf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">aperture_mask</span><span class="o">=</span><span class="n">tpf</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;APERTURE&quot;</span><span class="p">][</span><span class="mi">200</span><span class="p">],</span> <span class="n">frame</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
-</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>
-</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="c1"># Plot LC</span>
-</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="n">lc</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">lightkurve</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">lk</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a><span class="c1"># Read in TPF and LCF, without removing bad cadences</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="n">tpf</span> <span class="o">=</span> <span class="n">lk</span><span class="o">.</span><span class="n">TessTargetPixelFile</span><span class="p">(</span><span class="s2">&quot;tess-1998YT6-s0006-1-1-shape11x11-moving_tp.fits&quot;</span><span class="p">,</span> <span class="n">quality_bitmask</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="n">lc</span> <span class="o">=</span> <span class="n">lk</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">tess</span><span class="o">.</span><span class="n">read_tess_lightcurve</span><span class="p">(</span><span class="s2">&quot;tess-1998YT6-s0006-1-1-shape11x11_lc.fits&quot;</span><span class="p">,</span> <span class="n">quality_bitmask</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a><span class="c1"># Plot TPF and aperture for a single frame</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a><span class="n">tpf</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">aperture_mask</span><span class="o">=</span><span class="n">tpf</span><span class="o">.</span><span class="n">hdu</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;APERTURE&quot;</span><span class="p">][</span><span class="mi">200</span><span class="p">],</span> <span class="n">frame</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a><span class="c1"># Plot LC</span>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="n">lc</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
 </span></code></pre></div>
 <h2 id="time">Time</h2>
 <p>When you initialise <code>MovingTPF()</code>, the parameter <code>barycentric</code> is defined as follows:</p>
@@ -850,7 +890,7 @@
 <li>"PRIMARY" - a primary HDU containing only a header.</li>
 <li>"PIXELS" - a table with the same columns as a SPOC TPF. Note that "POS_CORR1" and "POS_CORR2" are defined as the offset between the center of the TPF and the expected position of the moving object given the input ephemeris. </li>
 <li>"APERTURE" - an image HDU containing the average aperture across all times.</li>
-<li>"EXTRAS" - a table HDU containing columns not found in a SPOC TPF. This includes "RA_PRED"/"DEC_PRED" (expected position of target in world coordinates), "CORNER1"/"CORNER2" (original FFI column/row of the lower-left pixel in the TPF), "PIXEL_QUALITY" (3D pixel quality mask identifying e.g. strap columns, non-science pixels and saturation), "APERTURE" (aperture as a function of time) and "ORIGINAL_TIME"/"ORIGINAL_TIMECORR" (time and barycentric correction derived by SPOC).</li>
+<li>"EXTRAS" - a table HDU containing columns not found in a SPOC TPF. This includes "RA_PRED"/"DEC_PRED" (expected position of target in world coordinates), "CORNER1"/"CORNER2" (original FFI column/row of the lower-left pixel in the TPF), "PIXEL_QUALITY" (3D pixel quality flags identifying e.g. strap columns, non-science pixels and saturation), "APERTURE" (aperture as a function of time) and "ORIGINAL_TIME"/"ORIGINAL_TIMECORR" (time and barycentric correction derived by SPOC).</li>
 </ul>
 <p>The LCF has two or three HDUs (depending upon which lightcurves you created): </p>
 <ul>

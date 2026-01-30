@@ -523,6 +523,24 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tess_asteroids.MovingTPF._create_lc_quality" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;_create_lc_quality
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tess_asteroids.MovingTPF.create_lc_quality_mask" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;create_lc_quality_mask
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tess_asteroids.MovingTPF.to_fits" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;to_fits
@@ -535,6 +553,15 @@
   <a href="#tess_asteroids.MovingTPF.animate_tpf" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;animate_tpf
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tess_asteroids.MovingTPF.plot_lc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-method"></code>&nbsp;plot_lc
     </span>
   </a>
   
@@ -1015,7 +1042,7 @@ If no filename is given, a default one will be generated.</p>
 
 </h3>
 <div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">make_lc</span><span class="p">(</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">method</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s2">&quot;aperture&quot;</span><span class="p">,</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">method</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">save</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">file_name</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">outdir</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
@@ -1033,7 +1060,7 @@ If no filename is given, a default one will be generated.</p>
         <li class="doc-section-item field-body">
             <b><code>method</code></b>
               (<code><span title="str">str</span></code>, default:
-                  <code>&#39;aperture&#39;</code>
+                  <code>&#39;all&#39;</code>
 )
           –
           <div class="doc-md-description">
@@ -1249,20 +1276,22 @@ It creates the <code>self.aperture_mask</code> attribute with the 3D mask.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Create a 3D pixel quality mask. The mask is a bit-wise combination of
-the following flags (Bit - Description):</p>
-<ul>
-<li>1 - pixel is outside of science array</li>
-<li>2 - pixel is in a strap column</li>
-<li>3 - pixel is saturated</li>
-<li>4 - pixel is within <code>sat_buffer_rad</code> pixels of a saturated pixel</li>
-<li>5 - pixel has no scattered light correction. Only relevant if <code>linear_model</code> background correction was used.</li>
-<li>6 - pixel had no background star model, value is nan. Only relevant if <code>linear_model</code> background correction was used.</li>
-<li>7 - pixel had negative flux value BEFORE background correction was applied.
-    This can happen near bleed columns from saturated stars (e.g. see Sector 6, Camera 1, CCD 4).</li>
-<li>8 - pixel has a poor fitting background star model. Only relevant if <code>linear_model</code> background correction was used.</li>
-</ul>
+        <p>Create 3D pixel quality flags. This is stored in the <code>self.pixel_quality</code> attribute.</p>
+<p>Each flag is a bit-wise combination of the following bits:</p>
 
+
+<details class="bit---description" open>
+  <summary>Bit - Description</summary>
+  <p>1 - pixel is outside of science array
+2 - pixel is in a strap column
+3 - pixel is saturated
+4 - pixel is within <code>sat_buffer_rad</code> pixels of a saturated pixel
+5 - pixel has no scattered light correction. Only relevant if <code>linear_model</code> background correction was used.
+6 - pixel had no background star model, value is nan. Only relevant if <code>linear_model</code> background correction was used.
+7 - pixel had negative flux value BEFORE background correction was applied.
+    This can happen near bleed columns from saturated stars (e.g. see Sector 6, Camera 1, CCD 4).
+8 - pixel has a poor fitting background star model. Only relevant if <code>linear_model</code> background correction was used.</p>
+</details>
 
 <p><span class="doc-section-title">Parameters:</span></p>
     <ul>
@@ -1331,6 +1360,173 @@ This function creates the <code>self.lc</code> attribute, which stores the time 
           <div class="doc-md-description">
             <p>Keyword arguments, e.g <code>self._aperture_photometry</code> takes <code>bad_bits</code>,
 <code>self._psf_photometry</code> takes <code>time_bin_size</code></p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tess_asteroids.MovingTPF._create_lc_quality" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">_create_lc_quality</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">_create_lc_quality</span><span class="p">(</span><span class="n">method</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">&#39;aperture&#39;</span><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Called internally to create quality flags for lightcurve. This is defined independently of
+SPOC quality flags.</p>
+<p>For <code>aperture</code> method, pixels inside the aperture mask are used to define LC quality.
+For <code>psf</code> method, pixels that were used to fit the PRF model are used to define LC quality.</p>
+<p>The flag is a bit-wise combination of the following bits:</p>
+
+
+<details class="bit---description" open>
+  <summary>Bit - Description</summary>
+  <p>1  - no pixels inside mask.
+2  - at least one non-science pixel inside mask.
+3  - at least one pixel inside mask is in a strap column.
+4  - at least one saturated pixel inside mask.
+5  - at least one pixel inside mask is 4-adjacent to a saturated pixel.
+6  - all pixels inside aperture are <code>bad_bits</code>. Only relevant if <code>method=aperture</code>.
+7  - PRF model contained nans.
+8  - at least one pixel inside mask does not have scattered light correction.
+     Only relevant if <code>linear_model</code> background correction was used.
+9  - at least one pixel inside mask had no star model (value is nan).
+     Only relevant if <code>linear_model</code> background correction was used.
+10 - at least one pixel inside mask had negative value BEFORE background correction was applied.
+11 - PSF fit failed due to singular matrix (see np.linalg.LinAlgError) or because all pixels
+     used to fit the PRF model had NaN flux values. Only relevant if <code>method=psf</code>.
+12 - at least one pixel inside mask had a poor fitting background star model.
+     Only relevant if <code>linear_model</code> background correction was used.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>method</code></b>
+              (<code><span title="str">str</span></code>, default:
+                  <code>&#39;aperture&#39;</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Photometric extraction method. One of <code>aperture</code> or <code>psf</code>.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+<b><code>lc_quality</code></b> (              <code><span title="ndarray">ndarray</span></code>
+)          –
+          <div class="doc-md-description">
+            <p>Array of lightcurve quality flags with length [ntimes].</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tess_asteroids.MovingTPF.create_lc_quality_mask" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">create_lc_quality_mask</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">create_lc_quality_mask</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">spoc_quality</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">lc_quality</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">bad_spoc_bits</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n"><span title="str">str</span></span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">bad_lc_bits</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n"><span title="str">str</span></span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Combines SPOC quality flags and tess_asteroids lightcurve quality flags to
+create a boolean quality mask that can be applied to the aperture or PSF
+lightcurve.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>spoc_quality</code></b>
+              (<code><span title="ndarray">ndarray</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Array of SPOC quality flags.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>lc_quality</code></b>
+              (<code><span title="ndarray">ndarray</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Array of tess_asteroids lightcurve quality flags, as defined by <code>_create_lc_quality()</code>.
+This must have the same length as <code>spoc_quality</code>.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>bad_spoc_bits</code></b>
+              (<code><span title="list">list</span> or <span title="str">str</span></code>, default:
+                  <code>&#39;default&#39;</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Defines SPOC bits corresponding to bad quality data. Can be one of:</p>
+<div class="language-text highlight"><pre><span></span><code>- &quot;default&quot; - mask bits defined by `default_bad_spoc_bits`.
+- &quot;all&quot; - mask all data with a SPOC quality flag.
+- &quot;none&quot; - mask no data.
+- list - mask custom bits provided in list.
+More information about the SPOC quality flags can be found in Section 9 of the TESS Science
+Data Products Description Document.
+</code></pre></div>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>bad_lc_bits</code></b>
+              (<code><span title="list">list</span> or <span title="str">str</span></code>, default:
+                  <code>&#39;default&#39;</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Defines bits corresponding to bad quality data from <code>_create_lc_quality()</code>.
+Can be one of:</p>
+<ul>
+<li>"default" - mask bits defined by <code>default_bad_lc_bits</code>.</li>
+<li>"all" - mask all data with a quality flag.</li>
+<li>"none" - mask no data.</li>
+<li>list - mask custom bits provided in list.</li>
+</ul>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+<b><code>quality_mask</code></b> (              <code><span title="ndarray">ndarray</span></code>
+)          –
+          <div class="doc-md-description">
+            <p>A boolean mask with the same length as <code>spoc_quality</code> and <code>lc_quality</code>.
+<code>True</code> indicates a good quality cadence and <code>False</code> indicates a bad quality cadence.</p>
           </div>
         </li>
     </ul>
@@ -1531,6 +1727,173 @@ If no filename is given, a default one will be generated.</p>
 )          –
           <div class="doc-md-description">
             <p>If in a notebook environment, the animation is returned in HTML format for display purposes.</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tess_asteroids.MovingTPF.plot_lc" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">plot_lc</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">plot_lc</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">lc</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="dict">dict</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">method</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">bad_spoc_bits</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n"><span title="str">str</span></span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">bad_ap_bits</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n"><span title="str">str</span></span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">bad_psf_bits</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n"><span title="str">str</span></span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="n">plot_err</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">plot_bad_quality</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">xlim</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="tuple">tuple</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    <span class="n">ylim</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="tuple">tuple</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    <span class="n">save</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    <span class="n">outdir</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">file_name</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Plot aperture and/or PSF lightcurves, with options to customise and save.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>lc</code></b>
+              (<code><span title="dict">dict</span></code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>A dictionary containing aperture and PSF photometry. This must have the same structure as that
+produced by <code>self.to_lightcurve()</code>. If None, <code>self.lc</code> will be used by default.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>method</code></b>
+              (<code><span title="str">str</span></code>, default:
+                  <code>&#39;all&#39;</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Lightcurve to plot. One of [<code>all</code>, <code>aperture</code>, <code>psf</code>].</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>bad_spoc_bits</code></b>
+              (<code><span title="list">list</span> or <span title="str">str</span></code>, default:
+                  <code>&#39;default&#39;</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Defines SPOC bits corresponding to bad quality data. Can be one of:</p>
+<ul>
+<li>"default" - mask bits defined by <code>default_bad_spoc_bits</code>.</li>
+<li>"all" - mask all data with a SPOC quality flag.</li>
+<li>"none" - mask no data.</li>
+<li>list - mask custom bits provided in list.
+More information about the SPOC quality flags can be found in Section 9 of the TESS Science
+Data Products Description Document.</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>bad_ap_bits</code></b>
+              (<code><span title="typing.Union">Union</span>[<span title="list">list</span>[<span title="int">int</span>], <span title="str">str</span>]</code>, default:
+                  <code>&#39;default&#39;</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Defines bits corresponding to bad quality data for <code>aperture</code>/<code>psf</code> photometry, as defined by <code>_create_lc_quality()</code>.
+Can be one of:</p>
+<ul>
+<li>"default" - mask bits defined by <code>default_bad_lc_bits</code>.</li>
+<li>"all" - mask all data with a quality flag.</li>
+<li>"none" - mask no data.</li>
+<li>list - mask custom bits provided in list.</li>
+</ul>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>plot_err</code></b>
+              (<code><span title="bool">bool</span></code>, default:
+                  <code>False</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>If True, plot errorbars on lightcurve.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>plot_bad_quality</code></b>
+              (<code><span title="bool">bool</span></code>, default:
+                  <code>True</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>If True, include data flagged as bad quality in the plot.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>xlim</code></b>
+              (<code><span title="typing.Optional">Optional</span>[<span title="tuple">tuple</span>]</code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>(min, max) axes limits.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>save</code></b>
+              (<code><span title="bool">bool</span></code>, default:
+                  <code>False</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>If True, save the figure.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>outdir</code></b>
+              (<code><span title="str">str</span></code>, default:
+                  <code>&#39;&#39;</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>If <code>save</code>, this is the directory into which the file will be saved.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>file_name</code></b>
+              (<code><span title="str">str</span> or None</code>, default:
+                  <code>None</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>If <code>save</code>, this is the filename that will be used.
+If no filename is given, a default one will be generated.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+<b><code>fig</code></b> (              <code><span title="matplotlib.figure.Figure">Figure</span></code>
+)          –
+          <div class="doc-md-description">
+            <p>Matplotlib figure object.</p>
           </div>
         </li>
     </ul>

@@ -491,6 +491,15 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#tess_asteroids.utils.create_bad_bitmask" class="md-nav__link">
+    <span class="md-ellipsis">
+      <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;create_bad_bitmask
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#tess_asteroids.utils.plot_img_aperture" class="md-nav__link">
     <span class="md-ellipsis">
       <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;plot_img_aperture
@@ -691,7 +700,8 @@
     <div class="doc doc-contents ">
 
         <p>Determine if a target has been observed by TESS and, if so, during which sector/camera/CCD. This function will also
-give an estimate of the length of time, in days, for which the target was observed on each sector/camera/CCD.</p>
+give an estimate of the length of time, in days, for which the target was observed on each sector/camera/CCD and its
+predicted average visual magnitude.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -739,6 +749,7 @@ sector/camera/CCD. The DataFrame has the following columns:</p>
 <ul>
 <li>'sector', 'camera', 'ccd': sector/camera/CCD target was observed in.</li>
 <li>'dur': approximate duration for which target was observed in this sector/camera/CCD, in days.</li>
+<li>'vmag': average predicted visual magnitude of the target.</li>
 </ul>
           </div>
         </li>
@@ -912,6 +923,73 @@ order moments.</p>
             <p>First (X, Y) and second (X2, Y2, XY) order moments, plus error on first order moments (XERR, YERR).
 If <code>second_order</code> is False, X2/Y2/XY are not returned. If <code>return_err</code> is False, XERR/YERR are
 not returned. Each array has shape (nt).</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="tess_asteroids.utils.create_bad_bitmask" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">create_bad_bitmask</span>
+
+
+</h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">create_bad_bitmask</span><span class="p">(</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">bad_bits</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n"><span title="str">str</span></span><span class="p">],</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">default_bad_bits</span><span class="p">:</span> <span class="n"><span title="list">list</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="p">)</span>
+</span></code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Convert a list of bits into an integer bitmask.</p>
+<p>This function translates 1-indexed bit positions into a single bitwise
+value. This value can be used with a bitwise AND operator to identify
+data points containing specific quality flags.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>bad_bits</code></b>
+              (<code><span title="list">list</span> or <span title="str">str</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Defines bits corresponding to bad quality data. Can be one of:</p>
+<div class="language-text highlight"><pre><span></span><code>- &quot;default&quot; - mask bits defined by `default_bad_bits`.
+- &quot;all&quot; - mask all data with a quality flag.
+- &quot;none&quot; - mask no data.
+- list - mask custom bits provided in list.
+</code></pre></div>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>default_bad_bits</code></b>
+              (<code><span title="list">list</span></code>, default:
+                  <code>[]</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>A list of 1-indexed bit positions used if <code>bad_bits</code> is
+set to 'default'.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+<b><code>bad_bitmask</code></b> (              <code><span title="int">int</span> or <span title="str">str</span></code>
+)          –
+          <div class="doc-md-description">
+            <p>The computed integer bitmask or the string "all".</p>
           </div>
         </li>
     </ul>
