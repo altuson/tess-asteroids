@@ -621,6 +621,28 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/tutorial3_multiple_apertures/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial 3 - Multiple apertures
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -789,6 +811,7 @@ of the target over time.</p>
 TESS Instrument Handbook 2018 (see also Fausnaugh et al. 2021).</p>
 <p>This function assumes that the background flux has been perfectly removed, i.e. the only flux is that
 from the target. It can account for flux outside of the aperture via <code>flux_fraction</code>.</p>
+<p>This function returns the symmetric errorbar, as well as asymmetric errorbars.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
@@ -833,7 +856,21 @@ from the target. It can account for flux outside of the aperture via <code>flux_
 <b><code>mag_err</code></b> (              <code><span title="float">float</span> or <span title="ndarray">ndarray</span></code>
 )          –
           <div class="doc-md-description">
-            <p>Error on TESS magnitude.</p>
+            <p>Symmetric error on TESS magnitude.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+<b><code>mag_uerr</code></b> (              <code><span title="float">float</span> or <span title="ndarray">ndarray</span></code>
+)          –
+          <div class="doc-md-description">
+            <p>Upper error on TESS magnitude.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+<b><code>mag_lerr</code></b> (              <code><span title="float">float</span> or <span title="ndarray">ndarray</span></code>
+)          –
+          <div class="doc-md-description">
+            <p>Lower error on TESS magnitude.</p>
           </div>
         </li>
     </ul>

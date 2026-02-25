@@ -680,6 +680,28 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="tutorials/tutorial3_multiple_apertures/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tutorial 3 - Multiple apertures
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -889,14 +911,15 @@
 <ul>
 <li>"PRIMARY" - a primary HDU containing only a header.</li>
 <li>"PIXELS" - a table with the same columns as a SPOC TPF. Note that "POS_CORR1" and "POS_CORR2" are defined as the offset between the center of the TPF and the expected position of the moving object given the input ephemeris. </li>
-<li>"APERTURE" - an image HDU containing the average aperture across all times.</li>
+<li>"APERTURE" - an image HDU containing the flattened aperture i.e. all pixels that are included in the time-dependent aperture at least once.</li>
 <li>"EXTRAS" - a table HDU containing columns not found in a SPOC TPF. This includes "RA_PRED"/"DEC_PRED" (expected position of target in world coordinates), "CORNER1"/"CORNER2" (original FFI column/row of the lower-left pixel in the TPF), "PIXEL_QUALITY" (3D pixel quality flags identifying e.g. strap columns, non-science pixels and saturation), "APERTURE" (aperture as a function of time) and "ORIGINAL_TIME"/"ORIGINAL_TIMECORR" (time and barycentric correction derived by SPOC).</li>
 </ul>
-<p>The LCF has two or three HDUs (depending upon which lightcurves you created): </p>
+<p>The LCF has three or four HDUs (depending upon which lightcurves you created): </p>
 <ul>
 <li>"PRIMARY" - a primary HDU containing only a header.</li>
-<li>"LIGHTCURVE_AP" - a table HDU containing the aperture photomety light curve, with columns including "TIME" (timestamps in BTJD), "FLUX"/"FLUX_ERR" (flux and error from aperture photometry) and "TESSMAG"/"TESSMAG_ERR" (measured TESS magnitude and error).</li>
-<li>"LIGHTCURVE_PSF" - a table HDU containing the PSF photomety light curve, with columns including "TIME" (timestamps in BTJD), "FLUX"/"FLUX_ERR" (flux and error from PSF photometry) and "TESSMAG"/"TESSMAG_ERR" (measured TESS magnitude and error).</li>
+<li>"LIGHTCURVE_AP" - a table HDU containing the aperture photomety light curve, with columns including "TIME" (timestamps in BTJD), "FLUX"/"FLUX_ERR" (flux and error from aperture photometry) and "AP_QUALITY" (light curve quality flags).</li>
+<li>"LIGHTCURVE_PSF" - a table HDU containing the PSF photomety light curve, with columns including "TIME" (timestamps in BTJD), "FLUX"/"FLUX_ERR" (flux and error from PSF photometry) and "PSF_QUALITY" (light curve quality flags).</li>
+<li>"EXTRAS" - a table HDU containing extra information, with columns including "RA_PRED"/"DEC_PRED" (expected position of target in world coordinates), "CORNER1"/"CORNER2" (original FFI column/row of the lower-left pixel in the TPF), "ORIGINAL_TIME"/"ORIGINAL_TIMECORR" (time and barycentric correction derived by SPOC) and "SUN_DISTANCE"/"OBS_DISTANCE"/"STO_ANGLE" (distance from Sun [AU] / distance from observer (TESS) [AU] / Sun-Target-Observer angle [deg]).</li>
 </ul>
 <h2 id="citation">Citation</h2>
 <p>If you make use of <code>tess-asteroids</code> in your work, please cite our software using the version-specific DOI from <a href="https://zenodo.org/records/15882329">Zenodo</a>. You can generate a BibTex citation using Zenodo.</p>
