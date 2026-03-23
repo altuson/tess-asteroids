@@ -382,6 +382,12 @@ class MovingTPF:
         row, column = row[bound_mask], column[bound_mask]
         pixel_coordinates = np.asarray([row.ravel(), column.ravel()]).T
 
+        # Check there are at least two cadences after masking.
+        if len(self.time_original) <= 1:
+            raise RuntimeError(
+                "There are less than two cadences with pixels fully inside bounds of FFI (1<=row<=2078, 1<=col<=2136)."
+            )
+
         # Check there are pixels inside FFI bounds.
         if len(pixel_coordinates) == 0:
             raise RuntimeError(
