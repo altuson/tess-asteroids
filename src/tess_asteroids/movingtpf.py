@@ -4508,62 +4508,81 @@ class MovingTPF:
                     after="AP{0}_PAR".format(i if len(ap_masks) > 1 else ""),
                 )
 
+        # Compute average predicted V and H magnitude of target
+        # Catch warnings that arise if arrays are empty:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Mean of empty slice",
+                category=RuntimeWarning,
+            )
+            vmag = (
+                round(
+                    np.nanmean(
+                        self.ephem.loc[
+                            np.logical_and(
+                                self.ephem["time"]
+                                >= (
+                                    self.time_original[0]
+                                    if self.barycentric
+                                    else self.time_original[0]
+                                    - self.timecorr_original[0]
+                                ),
+                                self.ephem["time"]
+                                <= (
+                                    self.time_original[-1]
+                                    if self.barycentric
+                                    else self.time_original[-1]
+                                    - self.timecorr_original[-1]
+                                ),
+                            ),
+                            "vmag",
+                        ]
+                    ),
+                    3,
+                )
+                if "vmag" in self.ephem
+                else None
+            )
+            hmag = (
+                round(
+                    np.nanmean(
+                        self.ephem.loc[
+                            np.logical_and(
+                                self.ephem["time"]
+                                >= (
+                                    self.time_original[0]
+                                    if self.barycentric
+                                    else self.time_original[0]
+                                    - self.timecorr_original[0]
+                                ),
+                                self.ephem["time"]
+                                <= (
+                                    self.time_original[-1]
+                                    if self.barycentric
+                                    else self.time_original[-1]
+                                    - self.timecorr_original[-1]
+                                ),
+                            ),
+                            "hmag",
+                        ]
+                    ),
+                    3,
+                )
+                if "hmag" in self.ephem and ~np.isnan(self.ephem["hmag"]).all()
+                else None
+            )
+
         # Add keywords for object properties
         hdu.header.set(
             "VMAG",
-            round(
-                np.nanmean(
-                    self.ephem.loc[
-                        np.logical_and(
-                            self.ephem["time"]
-                            >= (
-                                self.time_original[0]
-                                if self.barycentric
-                                else self.time_original[0] - self.timecorr_original[0]
-                            ),
-                            self.ephem["time"]
-                            <= (
-                                self.time_original[-1]
-                                if self.barycentric
-                                else self.time_original[-1] - self.timecorr_original[-1]
-                            ),
-                        ),
-                        "vmag",
-                    ]
-                ),
-                3,
-            )
-            if "vmag" in self.ephem
-            else None,
+            vmag if ~np.isnan(vmag) else None,
             comment="[mag] predicted V magnitude",
             after="EQUINOX",
         )
         hdu.header.set(
             "HMAG",
-            round(
-                np.nanmean(
-                    self.ephem.loc[
-                        np.logical_and(
-                            self.ephem["time"]
-                            >= (
-                                self.time_original[0]
-                                if self.barycentric
-                                else self.time_original[0] - self.timecorr_original[0]
-                            ),
-                            self.ephem["time"]
-                            <= (
-                                self.time_original[-1]
-                                if self.barycentric
-                                else self.time_original[-1] - self.timecorr_original[-1]
-                            ),
-                        ),
-                        "hmag",
-                    ]
-                ),
-                3,
-            )
-            if "hmag" in self.ephem and ~np.isnan(self.ephem["hmag"]).all()
-            else None,
+            hmag if ~np.isnan(hmag) else None,
             comment="[mag] predicted H absolute magnitude",
             after="VMAG",
         )
