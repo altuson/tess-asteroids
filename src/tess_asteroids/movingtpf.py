@@ -847,7 +847,7 @@ class MovingTPF:
                             self.sector, len(sector_downlinks)
                         )
                     )
-                elif self.sector > 55 and len(sector_downlinks) != 4:
+                elif self.sector > 55 and self.sector not in [97, 98] and len(sector_downlinks) != 4:
                     logger.warning(
                         "For sector {0} there should be 4 data chunks, but there are actually {1} data chunks. Investigate or define your own `data_chunks`.".format(
                             self.sector, len(sector_downlinks)
