@@ -4572,7 +4572,7 @@ class MovingTPF:
                     3,
                 )
                 if "vmag" in self.ephem
-                else None
+                else np.nan
             )
             hmag = (
                 round(
