@@ -44,7 +44,7 @@ default_bad_spoc_bits = [1, 2, 3, 4, 5, 6, 8, 10, 13, 15]
 # or negative raw flux, or cadence is in region of non-science data during sector 3.
 default_bad_lc_bits = [2, 4, 10, 14]
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 __all__ = ["MovingTPF"]
 
 from .movingtpf import MovingTPF  # noqa: E402
