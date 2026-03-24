@@ -264,9 +264,7 @@ def test_pixel_quality():
     """
 
     # Create artificial track for a region that includes a saturated star, straps and non-science pixels.
-    # Note: the track must have length > 1, but we use two timestamps very close together so resulting
-    # moving TPF only has one frame.
-    time = np.linspace(2458328.50, 2458328.52, 2) - 2457000
+    time = np.linspace(2458328.5, 2458329.0, 2) - 2457000
     track = pd.DataFrame(
         {
             "time": time,
