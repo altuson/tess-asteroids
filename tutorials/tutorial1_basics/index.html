@@ -26033,7 +26033,7 @@ target.plot_lc()</div>
 <p>This is flagging bad quality data with a mask which combines the SPOC quality flags and the <code>tess_asteroids</code> lightcurve quality flags. By default it masks the following bits:</p>
 <ul>
 <li>For SPOC, it masks bits [1, 2, 3, 4, 5, 6, 8, 10, 13, 15] as recommended in the <a href="https://outerspace.stsci.edu/spaces/TESS/pages/14563420/2.0+-+Data+Product+Overview">TESS Archive Manual</a>.</li>
-<li>For <code>tess_asteroids</code>, it masks bits [2, 4, 10] as defined by <code>_create_lc_quality()</code>. This corresponds to cadences with at least one non-science pixel inside the mask, at least one saturated pixel inside the mask or a pixel with a negative raw flux (i.e. before background correction).</li>
+<li>For <code>tess_asteroids</code>, it masks bits [2, 4, 10, 14] as defined by <code>_create_lc_quality()</code>. This corresponds to cadences with at least one non-science pixel inside the mask, at least one saturated pixel inside the mask or at least one pixel with a negative raw flux (i.e. before background correction) inside the mask, or cadences which are in the region of non-science data during sector 3.</li>
 </ul>
 <p>In the above example, there is no bad quality data when using the default mask. The bits to mask can be updated independently for SPOC, the aperture lightcurve and the PSF lightcurve:</p>
 </div>

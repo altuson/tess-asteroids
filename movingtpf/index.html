@@ -1410,9 +1410,12 @@ This function creates the <code>self.lc</code> attribute, which stores the time 
 </span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="n">pixel_mask</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="list">list</span></span><span class="p">,</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">],</span>
 </span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    <span class="n">pixel_quality</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="list">list</span></span><span class="p">,</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">],</span>
 </span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">prf_nan_mask</span><span class="p">:</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">bad_bit_value</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    <span class="n">psf_flux</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="p">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="n">time_sc</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">,</span> <span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">]</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="p">],</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    <span class="n">bad_bit_value</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">psf_flux</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="numpy.ndarray">ndarray</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1422,12 +1425,14 @@ This function is called internally by <code>_aperture_photometry()</code> and <c
 <p>If you are creating LC quality for aperture photometry:</p>
 <ul>
 <li><code>pixel_mask</code> should correspond to the pixels inside the aperture mask.</li>
+<li><code>time_sc</code> should be an array corresponding to time at the spacecraft.</li>
 <li><code>bad_bit_value</code> should correspond to <code>bad_bits</code> defined by user in <code>_aperture_photometry()</code>.</li>
 <li><code>psf_flux</code> should be None.</li>
 </ul>
 <p>If you are creating LC quality for PSF photometry:</p>
 <ul>
 <li><code>pixel_mask</code> should correspond to the pixels that were used to fit the PRF model in <code>_psf_photometry()</code>.</li>
+<li><code>time_sc</code> should be a tuple of arrays for time at the spacecraft, upper error on bin and lower error on bin.</li>
 <li><code>bad_bit_value</code> should be None.</li>
 <li><code>psf_flux</code> should be the PSF flux time-series from <code>_psf_photometry()</code>.</li>
 </ul>
@@ -1447,6 +1452,7 @@ This function is called internally by <code>_aperture_photometry()</code> and <c
 <li>11 - PSF fit failed due to singular matrix (see np.linalg.LinAlgError) or because all pixels used to fit the PRF model had NaN flux values. Only relevant if <code>method=psf</code>.</li>
 <li>12 - at least one pixel inside mask had a poor fitting background star model. Only relevant if <code>linear_model</code> background correction was used.</li>
 <li>13 - mask has two or more discrete regions.</li>
+<li>14 - non-science data from sector 3, as defined in data release notes: https://archive.stsci.edu/missions/tess/doc/tess_drn/tess_sector_03_drn04_v02.pdf</li>
 </ul>
 
 
@@ -1476,6 +1482,16 @@ should be the pixels used to fit the PRF model.</p>
           <div class="doc-md-description">
             <p>Cadences where the PRF model is NaN, as returned by <code>_create_target_prf_model()</code>. This must have length equal to the first
 dimension of <code>pixel_mask</code>.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>time_sc</code></b>
+              (<code><span title="ndarray">ndarray</span> or <span title="tuple">tuple</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>For aperture photometry, this should be an ndarray corresponding to time at the spacecraft.
+For PSF photometry, this should be a tuple of arrays for time at the spacecraft, upper error on bin and lower error on bin.
+This is used to identify non-science data in sector 3, and each array must have length equal to the first dimension of <code>pixel_mask</code>.</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
